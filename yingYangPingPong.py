@@ -102,7 +102,9 @@ while True:
         if circulo["pos"][1] - RADIUS < 0 or circulo["pos"][1] + RADIUS > HEIGHT:
             circulo["vel"][1] *= -1
 
-        # Comprobar colisiones con los ladrillos, pero no cambiar color si las pelotas están chocando
+        ''' Comprobar colisiones con los ladrillos, pero no cambiar color si las pelotas 
+        están chocando'''
+        
         check_collision_with_bricks(circulo, skip_color_change=pelotas_chocan)
 
     # Calcular los porcentajes de ladrillos negros y blancos
