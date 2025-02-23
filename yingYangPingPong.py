@@ -6,9 +6,11 @@ import math
 # Inicialización de Pygame
 pygame.init()
 
-# Dimensiones de la ventana
-WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+# Dimensiones de la pantalla completa usando la resolución actual
+info = pygame.display.Info()
+WIDTH, HEIGHT = info.current_w, info.current_h
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+
 pygame.display.set_caption("Ventana con Ladrillos de Colores y Rebote de Pelotas")
 
 # Colores
