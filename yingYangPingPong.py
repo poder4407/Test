@@ -1,79 +1,97 @@
-import pygame
 import sys
+import pygame
 import random
 import math
 
-# Inicialización de Pygame
+# --- Procesamiento de argumentos ---
+# Por defecto se asume modo protector (/s)
+mode = 's'
+if len(sys.argv) > 1:
+    arg = sys.argv[1].lower()
+    if arg.startswith('/c'):
+        # Modo configuración: se muestra una ventana sencilla y se sale
+        pygame.init()
+        config_screen = pygame.display.set_mode((400, 300))
+        pygame.display.set_caption("Configuración del Protector de Pantallas")
+        font = pygame.font.SysFont(None, 24)
+        text = font.render("No hay opciones de configuración.", True, (255, 255, 255))
+        config_screen.fill((0, 0, 0))
+        config_screen.blit(text, (50, 130))
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        pygame.quit()
+        sys.exit()
+    elif arg.startswith('/p'):
+        mode = 'p'
+    # Si es /s o cualquier otro parámetro, se usa el modo protector
+
+# Inicializar Pygame (se vuelve a inicializar para el modo que corresponda)
 pygame.init()
 
-# Dimensiones de la pantalla completa usando la resolución actual
-info = pygame.display.Info()
-WIDTH, HEIGHT = info.current_w, info.current_h
-screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+# --- Configuración de la pantalla según el modo ---
+def setup_screen(mode):
+    if mode == 'p':
+        # Modo vista previa: ventana pequeña
+        screen = pygame.display.set_mode((300, 200))
+    else:
+        # Modo protector: pantalla completa
+        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    return screen
 
-pygame.display.set_caption("Ventana con Ladrillos de Colores y Rebote de Pelotas")
+screen = setup_screen(mode)
+WIDTH, HEIGHT = screen.get_size()
+pygame.display.set_caption("Protector de Pantallas Ying Yang Ping Pong")
 
-# Colores
+# --- Definiciones y configuraciones del juego ---
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-
-# Tamaño de los ladrillos
 BRICK_SIZE = 40
-
-# Datos de los círculos
 RADIUS = 20
 
-# Definir propiedades de los círculos, cada uno empieza en el fondo de color contrario
+# Configuración inicial de los círculos
 circulo_negro = {
-    "pos": [3 * WIDTH // 4, HEIGHT // 2],  # Posición inicial en el fondo blanco
+    "pos": [WIDTH // 4, HEIGHT // 2],
     "vel": [random.choice([-4, 4]), random.choice([-4, 4])],
     "color": BLACK
 }
 
 circulo_blanco = {
-    "pos": [WIDTH // 4, HEIGHT // 2],  # Posición inicial en el fondo negro
+    "pos": [3 * WIDTH // 4, HEIGHT // 2],
     "vel": [random.choice([-4, 4]), random.choice([-4, 4])],
     "color": WHITE
 }
 
-# Crear el fondo de ladrillos
+# Creación del fondo de ladrillos: ladrillos blancos en la mitad izquierda, negros en la derecha.
 bricks = []
 for x in range(0, WIDTH, BRICK_SIZE):
     column = []
     for y in range(0, HEIGHT, BRICK_SIZE):
-        # Colocar ladrillos blancos en el lado derecho y negros en el izquierdo
-        color = BLACK if x < WIDTH // 2 else WHITE
+        color = WHITE if x < WIDTH // 2 else BLACK
         column.append({"rect": pygame.Rect(x, y, BRICK_SIZE, BRICK_SIZE), "color": color})
     bricks.append(column)
 
-# Reloj para controlar la velocidad de fotogramas
 clock = pygame.time.Clock()
-
-# Fuente pequeña para el texto dentro de los círculos
 small_font = pygame.font.SysFont(None, 20)
 
-# Función para verificar colisión entre las pelotas
+# --- Funciones de colisión y lógica del juego ---
 def check_ball_collision(c1, c2):
     dist = math.hypot(c1["pos"][0] - c2["pos"][0], c1["pos"][1] - c2["pos"][1])
-    return dist < 2 * RADIUS  # Las pelotas chocan si la distancia es menor al diámetro
+    return dist < 2 * RADIUS
 
-# Función para manejar el rebote y el cambio de color de los ladrillos
 def check_collision_with_bricks(circle, skip_color_change=False):
     for column in bricks:
         for brick in column:
-            if brick["color"] == circle["color"]:  # Solo verificar colisiones con ladrillos del mismo color
+            if brick["color"] == circle["color"]:
                 if brick["rect"].collidepoint(circle["pos"]):
-                    # Rebote al tocar un ladrillo del mismo color
+                    # Invertir velocidad según el lado de colisión
                     if brick["rect"].left < circle["pos"][0] < brick["rect"].right:
                         circle["vel"][1] *= -1
                     if brick["rect"].top < circle["pos"][1] < brick["rect"].bottom:
                         circle["vel"][0] *= -1
-
-                    # Cambiar el color del ladrillo solo si no se está en un choque entre pelotas
+                    # Cambiar el color del ladrillo (si no están chocando ambas pelotas)
                     if not skip_color_change:
                         brick["color"] = WHITE if circle["color"] == BLACK else BLACK
 
-# Función para calcular los porcentajes de color
 def calculate_color_percentages():
     total_bricks = sum(len(column) for column in bricks)
     black_count = sum(1 for column in bricks for brick in column if brick["color"] == BLACK)
@@ -82,53 +100,52 @@ def calculate_color_percentages():
     white_percentage = (white_count / total_bricks) * 100
     return black_percentage, white_percentage
 
-# Bucle principal
+# --- Bucle principal del protector de pantallas ---
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        # Permitir salir presionando Escape
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
 
-    # Verificar colisión entre pelotas
+    # Verificar colisión entre las pelotas
     pelotas_chocan = check_ball_collision(circulo_negro, circulo_blanco)
 
-    # Mover los círculos
+    # Actualizar posición de cada círculo y gestionar rebotes
     for circulo in [circulo_negro, circulo_blanco]:
-        # Actualizar posición
         circulo["pos"][0] += circulo["vel"][0]
         circulo["pos"][1] += circulo["vel"][1]
 
-        # Rebote en los bordes de la ventana
         if circulo["pos"][0] - RADIUS < 0 or circulo["pos"][0] + RADIUS > WIDTH:
             circulo["vel"][0] *= -1
         if circulo["pos"][1] - RADIUS < 0 or circulo["pos"][1] + RADIUS > HEIGHT:
             circulo["vel"][1] *= -1
 
-        ''' Comprobar colisiones con los ladrillos, pero no cambiar color si las pelotas 
-        están chocando'''
-        
         check_collision_with_bricks(circulo, skip_color_change=pelotas_chocan)
 
-    # Calcular los porcentajes de ladrillos negros y blancos
+    # Calcular porcentajes de ladrillos
     black_percentage, white_percentage = calculate_color_percentages()
 
-    # Dibujar los ladrillos
+    # Dibujar fondo (ladrillos)
     for column in bricks:
         for brick in column:
             pygame.draw.rect(screen, brick["color"], brick["rect"])
 
-    # Dibujar los círculos
+    # Dibujar círculos
     pygame.draw.circle(screen, circulo_negro["color"], circulo_negro["pos"], RADIUS)
     pygame.draw.circle(screen, circulo_blanco["color"], circulo_blanco["pos"], RADIUS)
 
-    # Texto de porcentaje dentro de cada círculo (porcentaje de ladrillos blancos en el círculo negro y viceversa)
-    black_text = small_font.render(f"{white_percentage:.2f}", True, WHITE)  # Porcentaje de blancos en círculo negro
-    white_text = small_font.render(f"{black_percentage:.2f}", True, BLACK)  # Porcentaje de negros en círculo blanco
+    # Mostrar porcentajes en cada círculo (el negro muestra el porcentaje de blancos y viceversa)
+    black_text = small_font.render(f"{white_percentage:.2f}", True, WHITE)
+    white_text = small_font.render(f"{black_percentage:.2f}", True, BLACK)
     black_text_rect = black_text.get_rect(center=circulo_negro["pos"])
     white_text_rect = white_text.get_rect(center=circulo_blanco["pos"])
     screen.blit(black_text, black_text_rect)
     screen.blit(white_text, white_text_rect)
 
-    # Actualizar la pantalla
     pygame.display.flip()
     clock.tick(30)
