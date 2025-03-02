@@ -110,14 +110,13 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        # Permitir salir presionando Escape
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                pygame.quit()
-                sys.exit()
-            # Reiniciar partida al presionar "r"
             if event.key == pygame.K_r:
                 reset_game()
+            else:
+                pygame.quit()
+                sys.exit()
+
 
     # Verificar colisión entre las pelotas
     pelotas_chocan = check_ball_collision(circulo_negro, circulo_blanco)
