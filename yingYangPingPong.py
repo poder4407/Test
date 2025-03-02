@@ -23,9 +23,8 @@ if len(sys.argv) > 1:
         sys.exit()
     elif arg.startswith('/p'):
         mode = 'p'
-    # Si es /s o cualquier otro parámetro, se usa el modo protector
+    # Si es /s u otro parámetro se usa el modo protector
 
-# Inicializar Pygame (se vuelve a inicializar para el modo que corresponda)
 pygame.init()
 
 # --- Configuración de la pantalla según el modo ---
@@ -45,30 +44,35 @@ pygame.display.set_caption("Protector de Pantallas Ying Yang Ping Pong")
 # --- Definiciones y configuraciones del juego ---
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-BRICK_SIZE = 40
+# Se calcula el tamaño del ladrillo como el MCD del ancho y alto de la pantalla
+BRICK_SIZE = math.gcd(WIDTH, HEIGHT)
 RADIUS = 20
 
-# Configuración inicial de los círculos
-circulo_negro = {
-    "pos": [WIDTH // 4, HEIGHT // 2],
-    "vel": [random.choice([-4, 4]), random.choice([-4, 4])],
-    "color": BLACK
-}
+# Función para reiniciar la partida
+def reset_game():
+    global circulo_negro, circulo_blanco, bricks
+    # Reiniciar las pelotas
+    circulo_negro = {
+        "pos": [WIDTH // 4, HEIGHT // 2],
+        "vel": [random.choice([-4, 4]), random.choice([-4, 4])],
+        "color": BLACK
+    }
+    circulo_blanco = {
+        "pos": [3 * WIDTH // 4, HEIGHT // 2],
+        "vel": [random.choice([-4, 4]), random.choice([-4, 4])],
+        "color": WHITE
+    }
+    # Reiniciar el fondo de ladrillos
+    bricks = []
+    for x in range(0, WIDTH, BRICK_SIZE):
+        column = []
+        for y in range(0, HEIGHT, BRICK_SIZE):
+            color = WHITE if x < WIDTH // 2 else BLACK
+            column.append({"rect": pygame.Rect(x, y, BRICK_SIZE, BRICK_SIZE), "color": color})
+        bricks.append(column)
 
-circulo_blanco = {
-    "pos": [3 * WIDTH // 4, HEIGHT // 2],
-    "vel": [random.choice([-4, 4]), random.choice([-4, 4])],
-    "color": WHITE
-}
-
-# Creación del fondo de ladrillos: ladrillos blancos en la mitad izquierda, negros en la derecha.
-bricks = []
-for x in range(0, WIDTH, BRICK_SIZE):
-    column = []
-    for y in range(0, HEIGHT, BRICK_SIZE):
-        color = WHITE if x < WIDTH // 2 else BLACK
-        column.append({"rect": pygame.Rect(x, y, BRICK_SIZE, BRICK_SIZE), "color": color})
-    bricks.append(column)
+# Inicializar estado del juego
+reset_game()
 
 clock = pygame.time.Clock()
 small_font = pygame.font.SysFont(None, 20)
@@ -111,6 +115,9 @@ while True:
             if event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 sys.exit()
+            # Reiniciar partida al presionar "r"
+            if event.key == pygame.K_r:
+                reset_game()
 
     # Verificar colisión entre las pelotas
     pelotas_chocan = check_ball_collision(circulo_negro, circulo_blanco)
@@ -140,8 +147,8 @@ while True:
     pygame.draw.circle(screen, circulo_blanco["color"], circulo_blanco["pos"], RADIUS)
 
     # Mostrar porcentajes en cada círculo (el negro muestra el porcentaje de blancos y viceversa)
-    black_text = small_font.render(f"{white_percentage:.2f}", True, WHITE)
-    white_text = small_font.render(f"{black_percentage:.2f}", True, BLACK)
+    black_text = small_font.render(f"{black_percentage:.2f}", True, WHITE)#white_percentage
+    white_text = small_font.render(f"{white_percentage:.2f}", True, BLACK)#black_percentage
     black_text_rect = black_text.get_rect(center=circulo_negro["pos"])
     white_text_rect = white_text.get_rect(center=circulo_blanco["pos"])
     screen.blit(black_text, black_text_rect)
