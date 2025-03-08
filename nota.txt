@@ -1,0 +1,11 @@
+py -m pip install pyinstaller//if yo dont have it intalled
+
+cd C:\Users\usuario\Documents\Visual Studio Code\Python\Test
+
+pyinstaller --onefile YingYangPingPong.py
+
+cd C:\Users\usuario\Documents\Visual Studio Code\Python\Test\dist
+
+ren YingYangPingPong.exe YingYangPingPong.scr
+
+C:\Windows\SysWOW64
